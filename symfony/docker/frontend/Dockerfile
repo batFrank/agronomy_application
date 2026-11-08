@@ -1,5 +1,0 @@
-FROM oven/bun:1
-
-WORKDIR /app
-
-EXPOSE 5173
