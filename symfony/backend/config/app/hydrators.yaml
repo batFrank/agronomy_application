@@ -1,0 +1,5 @@
+services:
+    App\Application\Hydrator\User\UserHydratorCollection:
+        arguments:
+            $hydrators:
+                - '@App\Application\Hydrator\User\UserCreatorHydrator'

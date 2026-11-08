@@ -1,0 +1,553 @@
+openapi: 3.0.3
+info:
+  title: Symfony Base Project - Common API
+  description: |
+    API para endpoints comunes utilizados tanto por administradores como por usuarios frontales.
+    Incluye autenticación, gestión de contraseñas y health check del sistema.
+  version: 1.0.0
+  contact:
+    name: Equipo de desarrollo
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Servidor de desarrollo local
+  - url: https://api.example.com/api/v1
+    description: Servidor de producción
+
+tags:
+  - name: Authentication
+    description: Endpoints de autenticación y gestión de sesiones
+  - name: Password Management
+    description: Endpoints para recuperación y restablecimiento de contraseñas
+  - name: Health
+    description: Endpoints para verificar el estado del sistema
+  - name: Profile
+    description: Endpoints para gestión del perfil del usuario autenticado
+  - name: OTP
+    description: Endpoints para generación y validación de código de seguridad (OTP)
+  - name: AI
+    description: Endpoints del asistente de IA
+
+paths:
+  /health-check:
+    get:
+      tags:
+        - Health
+      summary: Verifica el estado del sistema
+      description: Endpoint para comprobar que la aplicación y sus servicios están funcionando correctamente
+      operationId: healthCheck
+      responses:
+        '204':
+          description: Sistema operativo correctamente sin contenido de respuesta
+        '500':
+          $ref: '../components.yaml#/components/responses/InternalServerError'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Autenticación de usuario
+      description: Autentica un usuario mediante email y contraseña, devolviendo un token JWT y un refresh token
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Email del usuario
+                password:
+                  type: string
+                  format: password
+                  description: Contraseña del usuario
+      responses:
+        '200':
+          description: Autenticación exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                        description: Token JWT para autenticación en siguientes peticiones
+                      refresh_token:
+                        type: string
+                        description: Token para renovar el JWT cuando expire
+        '400':
+          $ref: '../components.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: '../components.yaml#/components/responses/Unauthorized'
+        '500':
+          $ref: '../components.yaml#/components/responses/InternalServerError'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Renueva el token de autenticación
+      description: Genera un nuevo JWT y refresh token utilizando un refresh token válido
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+                  description: Refresh token previamente obtenido en login
+      responses:
+        '200':
+          description: Tokens renovados exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                        description: Nuevo token JWT
+                      refresh_token:
+                        type: string
+                        description: Nuevo refresh token
+        '400':
+          description: Petición incorrecta - falta el parámetro refresh_token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Descripción del error
+        '401':
+          description: Refresh token inválido o expirado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Tipo de error
+                  message:
+                    type: string
+                    description: Mensaje descriptivo del error
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Tipo de error
+                  message:
+                    type: string
+                    description: Mensaje descriptivo del error
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Cierra la sesión del usuario
+      description: Invalida el refresh token enviado para finalizar la sesión activa
+      operationId: logout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+                  description: Refresh token que se desea invalidar
+      responses:
+        '200':
+          description: Logout completado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Confirmación de cierre de sesión
+        '400':
+          $ref: '../components.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: '../components.yaml#/components/responses/Unauthorized'
+        '500':
+          $ref: '../components.yaml#/components/responses/InternalServerError'
+
+  /auth/password-recover:
+    post:
+      tags:
+        - Password Management
+      summary: Solicita recuperación de contraseña
+      description: Envía un email al usuario con un token para restablecer su contraseña
+      operationId: passwordRecover
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Email del usuario que solicita la recuperación
+      responses:
+        '200':
+          description: Email de recuperación enviado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Mensaje de confirmación
+                  error:
+                    type: integer
+                    description: Código de error (1 indica mensaje informativo)
+        '400':
+          $ref: '../components.yaml#/components/responses/BadRequest'
+        '422':
+          $ref: '../components.yaml#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '../components.yaml#/components/responses/InternalServerError'
+
+  /auth/password-check:
+    post:
+      tags:
+        - Password Management
+      summary: Valida un token de recuperación de contraseña
+      description: Verifica si un reset token es válido y no ha expirado
+      operationId: passwordCheck
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reset_token
+              properties:
+                reset_token:
+                  type: string
+                  minLength: 32
+                  maxLength: 128
+                  description: Token de recuperación a validar
+      responses:
+        '200':
+          description: Validación completada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      valid:
+                        type: boolean
+                        description: Indica si el token es válido (true) o inválido/expirado (false)
+        '400':
+          $ref: '../components.yaml#/components/responses/BadRequest'
+        '500':
+          $ref: '../components.yaml#/components/responses/InternalServerError'
+
+  /auth/password-reset:
+    post:
+      tags:
+        - Password Management
+      summary: Restablece la contraseña del usuario
+      description: Establece una nueva contraseña utilizando un reset token válido
+      operationId: passwordReset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reset_token
+                - new_password
+              properties:
+                reset_token:
+                  type: string
+                  minLength: 32
+                  maxLength: 128
+                  description: Token de recuperación válido
+                new_password:
+                  type: string
+                  format: password
+                  minLength: 6
+                  maxLength: 255
+                  description: Nueva contraseña del usuario
+      responses:
+        '200':
+          description: Contraseña restablecida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Mensaje de confirmación
+                  error:
+                    type: integer
+                    description: Código de error (1 indica mensaje informativo)
+        '400':
+          description: Token inválido o expirado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Mensaje descriptivo del error
+                  error:
+                    type: integer
+                    description: Código de error
+        '500':
+          description: Error al restablecer la contraseña
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Mensaje descriptivo del error
+                  error:
+                    type: integer
+                    description: Código de error
+  ###########
+  ### OTP ###
+  ###########
+  /auth/otp/login-2fa/generate:
+    post:
+      tags:
+        - OTP
+      operationId: authLogin2faGenerate
+      summary: Request a OTP code for a user. Used as a 2FA method.
+      parameters:
+        - name: x-api-key
+          required: true
+          in: header
+          schema:
+            type: string
+            description: API key to authenticate the request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Email del usuario
+      responses:
+        '204':
+          description: OTP generado exitosamente
+        '400':
+          $ref: '../components.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: '../components.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: '../components.yaml#/components/responses/Forbidden'
+        '422':
+          $ref: '../components.yaml#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '../components.yaml#/components/responses/InternalServerError'
+  /auth/otp/login-2fa/validate:
+    post:
+      tags:
+        - OTP
+      operationId: authLogin2faValidate
+      summary: Request a OTP code login validation for a user.
+      parameters:
+        - name: x-api-key
+          required: true
+          in: header
+          schema:
+            type: string
+            description: API key to authenticate the request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Email del usuario
+                code:
+                  type: string
+                  description: OTP Code
+      responses:
+        '200':
+          description: Correct OTP code
+        '400':
+          $ref: '../components.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: '../components.yaml#/components/responses/Unauthorized'
+        '422':
+          $ref: '../components.yaml#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '../components.yaml#/components/responses/InternalServerError'
+
+  /me:
+    get:
+      tags:
+        - Profile
+      summary: Obtiene el perfil del usuario autenticado
+      description: Devuelve los datos del usuario que ha iniciado sesión. Solo accesible por el propio usuario autenticado.
+      operationId: getMe
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Perfil del usuario recuperado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '../components.yaml#/components/schemas/User'
+        '401':
+          $ref: '../components.yaml#/components/responses/Unauthorized'
+        '500':
+          $ref: '../components.yaml#/components/responses/InternalServerError'
+
+  /ai/chat:
+    post:
+      tags:
+        - AI
+      summary: Envía una conversación al agente y devuelve su respuesta
+      description: |
+        Chat sin estado: el cliente reenvía el historial completo en cada petición y el servidor no
+        guarda nada. Solo acepta los roles `user` y `assistant`; el último turno tiene que ser del
+        usuario.
+
+        El servidor decide qué le llega al agente: se queda con los últimos 40 turnos y, si esa
+        ventana empieza por turnos de `assistant`, los descarta (el agente siempre recibe una
+        conversación que empieza por el usuario). Una conversación más larga no se rechaza, se recorta.
+        Lo único que se rechaza por cantidad es una petición con más de 400 turnos.
+
+        Longitud máxima de un turno de la ventana: 2000 caracteres si es de `user`, 20000 si es de
+        `assistant` (el modelo los escribe y el cliente los reenvía tal cual).
+
+        Hay dos formas de 400. Si el JSON no tiene la forma esperada (falta `turns`, un turno sin
+        `content`, un rol no permitido, un texto en blanco, más de 400 turnos), `metadata.violations`
+        trae un error por campo con la ruta del turno (p. ej. `[turns][0][content]`). Si la forma es
+        correcta pero la conversación no es válida (no termina en un turno de usuario, un turno
+        demasiado largo), la respuesta trae solo `message`, sin `violations`. En esos mensajes las
+        posiciones de los turnos cuentan desde 0 (p. ej. «Turn 0 cannot be longer than 2000
+        characters.») y son las de la lista que envió el cliente.
+      operationId: postAiChat
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - turns
+              properties:
+                turns:
+                  type: array
+                  minItems: 1
+                  maxItems: 400
+                  description: Historial completo de la conversación, en orden. El último turno es del usuario.
+                  items:
+                    type: object
+                    required:
+                      - role
+                      - content
+                    properties:
+                      role:
+                        type: string
+                        enum:
+                          - user
+                          - assistant
+                        description: Quién dijo el turno
+                      content:
+                        type: string
+                        minLength: 1
+                        description: Texto del turno. No puede estar vacío ni ser solo espacios en blanco.
+              example:
+                turns:
+                  - role: user
+                    content: ¿Cuántos usuarios hay?
+                  - role: assistant
+                    content: Hay tres usuarios.
+                  - role: user
+                    content: ¿Y qué roles tienen?
+      responses:
+        '200':
+          description: Respuesta del agente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      answer:
+                        type: string
+                        description: Texto de la respuesta del agente
+        '400':
+          description: |
+            Petición incorrecta. Con `metadata.violations` (un error por campo, con la ruta del turno)
+            si el JSON no tiene la forma esperada; solo con `message` si la conversación no es válida.
+          content:
+            application/json:
+              schema:
+                $ref: '../components.yaml#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '../components.yaml#/components/responses/Unauthorized'
+        '502':
+          $ref: '../components.yaml#/components/responses/BadGateway'
+        '500':
+          $ref: '../components.yaml#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: '../components.yaml#/components/securitySchemes/bearerAuth'

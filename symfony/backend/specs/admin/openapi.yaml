@@ -1,0 +1,294 @@
+openapi: 3.0.3
+info:
+  title: Symfony Base Project - Admin API
+  description: |
+    API para endpoints administrativos del sistema.
+    Requiere autenticación mediante JWT y permisos de administrador (ROLE_ADMIN).
+    Incluye gestión completa de usuarios del sistema.
+  version: 1.0.0
+  contact:
+    name: Equipo de desarrollo
+servers:
+  - url: http://localhost:8000/api/v1/admin
+    description: Servidor de desarrollo local
+  - url: https://api.example.com/api/v1/admin
+    description: Servidor de producción
+
+tags:
+  - name: Users
+    description: Gestión de usuarios del sistema
+
+paths:
+  /users:
+    get:
+      tags:
+        - Users
+      summary: Obtiene listado de usuarios paginado
+      description: |
+        Devuelve una lista paginada de usuarios del sistema con opciones de filtrado,
+        búsqueda y ordenación. Requiere autenticación y rol de administrador.
+      operationId: getUsers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Número de página a recuperar (debe ser mayor que 0)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: search
+          in: query
+          description: Término de búsqueda para filtrar usuarios por email u otros campos
+          required: false
+          schema:
+            type: string
+        - name: role
+          in: query
+          description: Filtrar usuarios por rol específico
+          required: false
+          schema:
+            type: string
+            enum: [ROLE_ADMIN, ROLE_MANAGER, ROLE_USER]
+        - name: created_by
+          in: query
+          description: |
+            Filtrar usuarios por el ID del usuario que los creó.
+            Nota: Los usuarios con rol ROLE_MANAGER verán automáticamente solo los usuarios que crearon,
+            sin necesidad de especificar este parámetro. Los usuarios con rol ROLE_ADMIN pueden filtrar
+            explícitamente por este parámetro o verán todos los usuarios sin filtro.
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: sort_by
+          in: query
+          description: Campo por el cual ordenar los resultados (requiere sort_dir)
+          required: false
+          schema:
+            type: string
+        - name: sort_dir
+          in: query
+          description: Dirección de ordenación (requiere sort_by)
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Listado de usuarios recuperado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '../components.yaml#/components/schemas/User'
+                  metadata:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                        description: Página actual
+                      total_pages:
+                        type: integer
+                        description: Total de páginas disponibles
+                      limit:
+                        type: integer
+                        description: Número de elementos por página (fijo en 10)
+                      total:
+                        type: integer
+                        description: Total de usuarios que coinciden con los filtros
+        '400':
+          $ref: '../components.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: '../components.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: '../components.yaml#/components/responses/Forbidden'
+        '500':
+          $ref: '../components.yaml#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Users
+      summary: Crea un nuevo usuario
+      description: |
+        Crea un nuevo usuario en el sistema con email, contraseña y roles especificados.
+        Requiere autenticación y rol de administrador.
+      operationId: createUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - password_confirmation
+                - roles
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Email del nuevo usuario (debe ser único)
+                password:
+                  type: string
+                  format: password
+                  minLength: 6
+                  description: Contraseña del nuevo usuario
+                password_confirmation:
+                  type: string
+                  format: password
+                  description: Confirmación de la contraseña (debe coincidir con password)
+                roles:
+                  type: array
+                  description: Roles asignados al usuario
+                  items:
+                    type: string
+                    enum: [ROLE_ADMIN, ROLE_USER]
+                  minItems: 1
+      responses:
+        '201':
+          description: Usuario creado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '../components.yaml#/components/schemas/User'
+        '400':
+          $ref: '../components.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: '../components.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: '../components.yaml#/components/responses/Forbidden'
+        '422':
+          $ref: '../components.yaml#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '../components.yaml#/components/responses/InternalServerError'
+
+  /users/{id}:
+    get:
+      tags:
+        - Users
+      summary: Obtiene un usuario por su ID
+      description: |
+        Devuelve los detalles completos de un usuario específico identificado por su UUID.
+        Requiere autenticación y rol de administrador.
+      operationId: getUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: UUID del usuario a recuperar
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Usuario recuperado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '../components.yaml#/components/schemas/User'
+        '400':
+          $ref: '../components.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: '../components.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: '../components.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: '../components.yaml#/components/responses/NotFound'
+        '500':
+          $ref: '../components.yaml#/components/responses/InternalServerError'
+
+    patch:
+      tags:
+        - Users
+      summary: Actualiza un usuario existente
+      description: |
+        Actualiza parcialmente los datos de un usuario existente.
+        Todos los campos son opcionales pero al menos uno debe estar presente.
+        Si se actualiza la contraseña, es obligatorio enviar password_confirmation.
+        Requiere autenticación y rol de administrador.
+      operationId: updateUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: UUID del usuario a actualizar
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Nuevo email del usuario
+                password:
+                  type: string
+                  format: password
+                  minLength: 6
+                  description: Nueva contraseña (requiere password_confirmation)
+                password_confirmation:
+                  type: string
+                  format: password
+                  description: Confirmación de la nueva contraseña (requerido si se envía password)
+                roles:
+                  type: array
+                  description: Nuevos roles del usuario
+                  items:
+                    type: string
+                    enum: [ROLE_ADMIN, ROLE_USER]
+                  minItems: 1
+      responses:
+        '200':
+          description: Usuario actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '../components.yaml#/components/schemas/User'
+        '400':
+          $ref: '../components.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: '../components.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: '../components.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: '../components.yaml#/components/responses/NotFound'
+        '422':
+          $ref: '../components.yaml#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '../components.yaml#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: '../components.yaml#/components/securitySchemes/bearerAuth'
+
+security:
+  - bearerAuth: []

@@ -1,0 +1,116 @@
+services:
+    App\Application\Log\Logger:
+        alias: 'App\Infrastructure\Log\MonologLogger'
+
+  # Transaction Manager
+    App\Application\Persistence\TransactionManager:
+        alias: App\Infrastructure\Persistence\NoOpTransactionManager
+
+  # Repositories
+    App\Domain\User\UserRepository:
+        alias: App\Infrastructure\Persistence\User\InMemoryUserRepository
+
+    App\Domain\ApiKey\ApiKeyRepository:
+        alias: App\Infrastructure\Persistence\ApiKey\InMemoryApiKeyRepository
+
+    App\Domain\Security\RefreshTokenRepository:
+        alias: App\Infrastructure\Persistence\Security\InMemoryRefreshTokenRepository
+
+    App\Domain\Scheduler\ScheduledTaskRepository:
+        alias: App\Infrastructure\Persistence\Scheduler\InMemoryScheduledTaskRepository
+
+    App\Domain\OTP\OtpRepository:
+        alias: App\Infrastructure\Persistence\OTP\InMemoryOtpRepository
+
+    ####################
+    ### OTP Provider ###
+    ####################
+    App\Infrastructure\OTP\Provider\DatabaseOtpProvider:
+        arguments:
+            $otpRepository: '@App\Domain\OTP\OtpRepository'
+            $uuidGenerator: '@App\Domain\Shared\Uuid\UuidGenerator'
+            $deliveryChannelDispatcher: '@App\Domain\OTP\DeliveryChannel\DeliveryChannelDispatcher'
+            $secret: 'test-secret-value'
+
+      ###################
+      ### FileSystems ###
+      ###################
+    PublicLocalFileSystem:
+        class: League\Flysystem\Filesystem
+        factory: '@App\Infrastructure\Shared\FileSystem\Factory\InMemoryFileSystemFactory'
+
+    PrivateLocalFileSystem:
+        class: League\Flysystem\Filesystem
+        factory: '@App\Infrastructure\Shared\FileSystem\Factory\InMemoryFileSystemFactory'
+
+    ChunksLocalFileSystem:
+        class: League\Flysystem\Filesystem
+        factory: '@App\Infrastructure\Shared\FileSystem\Factory\InMemoryFileSystemFactory'
+
+    TmpLocalFileSystem:
+        class: League\Flysystem\Filesystem
+        factory: '@App\Infrastructure\Shared\FileSystem\Factory\InMemoryFileSystemFactory'
+
+    ##########
+    ### AI ###
+    ##########
+    # Private services are inlined or removed at compile time, so the test container cannot fetch
+    # them even when a production service consumes them (measured with #105: dropping any of these
+    # aliases breaks the AI tests). An alias (not a redefinition) exposes the production definition,
+    # sharedness included, under test.
+    test.agent_context:
+        alias: App\Infrastructure\AI\Context\AgentContext
+        public: true
+
+    test.tool_exception_mapper:
+        alias: App\Infrastructure\AI\Toolbox\ToolExceptionMapper
+        public: true
+
+    test.ai.tool_factory:
+        alias: ai.tool_factory
+        public: true
+
+    test.ai.tool_call_argument_resolver:
+        alias: ai.tool_call_argument_resolver
+        public: true
+
+    # The toolbox and the agent the bundle builds from ai.yaml (`user_directory`): the tests run
+    # the real ones, including the identifier stripping decorator.
+    test.ai.toolbox.user_directory:
+        alias: ai.toolbox.user_directory
+        public: true
+
+    test.ai.agent.user_directory:
+        alias: ai.agent.user_directory
+        public: true
+
+    test.ai.agent.example_report:
+        alias: ai.agent.example_report
+        public: true
+
+    # The port as the container wires it, to test the adapter with the real validator and agent.
+    test.report_gateway:
+        alias: App\Application\AI\ReportGateway
+        public: true
+
+    # Stands in for the OpenRouter platform the agents are built on, so no test reaches the provider.
+    # It decorates (instead of redefining) the real one: the container needs the OPENROUTER_* env
+    # vars to stay referenced, or it refuses to compile.
+    test.ai.scripted_platform:
+        class: App\Tests\Infrastructure\AI\Agent\Double\ScriptedPlatform
+        decorates: ai.platform.openrouter
+        arguments: ['@.inner']
+        public: true
+
+    # Every HTTP client of the test container answers through it (framework.yaml, when@test).
+    App\Tests\Double\Http\NoNetworkHttpClientTrap:
+        public: true
+
+    test.http_client:
+        alias: http_client
+        public: true
+
+    # Lets the tests run a ToolCall of the probe tool through the bus.
+    App\Tests\Infrastructure\AI\Toolbox\Double\ProbeQueryHandler:
+        tags:
+            - { name: 'tactician.handler', typehints: true }

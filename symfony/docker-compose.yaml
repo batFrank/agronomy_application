@@ -1,0 +1,109 @@
+services:
+  symfony-base-database:
+    container_name: symfony-base-database
+    image: postgres:17
+    restart: unless-stopped
+    ports:
+      - "5011:5432"
+    volumes:
+      - ./docker/db/data:/var/lib/postgresql/data
+      - ./docker/db/initdb:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_PASSWORD: docker
+      POSTGRES_DB: symfony_base
+      POSTGRES_USER: postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      symfony-base-network:
+        ipv4_address: 172.1.1.200
+
+  symfony-base-apache:
+    container_name: symfony-base-apache
+    build: ./docker/apache
+    restart: unless-stopped
+    ports:
+      - "8011:80"
+      - "4011:443"
+      - "9011:9001"
+    volumes:
+      - ./backend:/var/www/html
+      - ./frontend/dist:/var/www/frontend
+      - ./docker/apache/virtualhost.conf:/etc/apache2/sites-enabled/000-default.conf
+      - ./docker/apache/virtualhost-ssl.conf:/etc/apache2/sites-enabled/default-ssl.conf
+    networks:
+      symfony-base-network:
+        ipv4_address: 172.1.1.100
+
+  symfony-base-php:
+    container_name: symfony-base-php
+    build:
+      context: ./docker/php
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    restart: unless-stopped
+    volumes:
+      - ./backend:/var/www/html/
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini
+      - ./docker/php/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini
+      - ./docker/php/error_reporting.ini:/usr/local/etc/php/conf.d/error_reporting.ini
+    environment:
+      SYMFONY_HOME: /var/www/html/.symfony
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      symfony-base-database:
+        condition: service_healthy
+      symfony-base-apache:
+        condition: service_started
+    networks:
+      symfony-base-network:
+        ipv4_address: 172.1.1.101
+
+  mailer:
+    container_name: symfony-base-mailer
+    image: axllent/mailpit
+    ports:
+      - "11011:1025"
+      - "18011:8025"
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    networks:
+      symfony-base-network:
+        ipv4_address: 172.1.1.102
+
+  symfony-base-frontend:
+    container_name: symfony-base-frontend
+    build: ./docker/frontend
+    restart: unless-stopped
+    ports:
+      - "7011:7011"
+      - "6006:6006"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    environment:
+      VITE_CLIENT: default
+    command: tail -f /dev/null
+    networks:
+      symfony-base-network:
+        ipv4_address: 172.1.1.103
+
+networks:
+  symfony-base-network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.enable_ipv6: "false"
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.1.1.0/24
+
+volumes:
+  frontend_node_modules:

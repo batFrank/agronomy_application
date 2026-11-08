@@ -1,0 +1,6 @@
+parameters:
+    app.filesystem:
+        public_local: '%kernel.project_dir%/public/uploads/'
+        private_local: '%kernel.project_dir%/Storage/'
+        chunks_local: '%kernel.project_dir%/var/chunks'
+        tmp_local: '%kernel.project_dir%/var/tmp/files'

@@ -1,0 +1,150 @@
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
+parameters:
+    jwt_token_ttl: 3600 # 1 hour in seconds
+
+imports:
+    - { resource: app/*.yaml }
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        bind:
+            ### Rollbar ###
+            $rollbarEnvironment: '%env(string:ROLLBAR_ENVIRONMENT)%'
+            $rollbarToken: '%env(string:ROLLBAR_TOKEN)%'
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/Infrastructure/Persistence/*/DBAL*'
+            - '../src/Application/Hydrator/*/*Collection.php'
+
+    # add more service definitions when explicit configuration is needed
+    # please note that last definitions always *replace* previous ones
+
+    App\Infrastructure\Controller\:
+        resource: '../src/Infrastructure/Controller'
+        tags: [ 'controller.service_arguments' ]
+
+    App\Application\CommandHandler\:
+        resource: '../src/Application/CommandHandler/'
+        tags:
+            - { name: 'tactician.handler', typehints: true }
+
+    App\Application\QueryHandler\:
+        resource: '../src/Application/QueryHandler/'
+        tags:
+            - { name: 'tactician.handler', typehints: true }
+
+
+    # Security
+    App\Infrastructure\Security\Firewall:
+        arguments:
+            $security: '%app.security_config%'
+            $routeChecker: '@App\Infrastructure\Service\RouteMethodChecker'
+            $apiKeyAuthenticationService: '@App\Domain\Security\ApiKeyAuthenticationServiceInterface'
+            $roleHierarchy: '%security.role_hierarchy.roles%'
+        public: true
+
+    App\Domain\Security\TokenInterface:
+        alias: App\Infrastructure\Security\LexikJwtToken
+
+    App\Infrastructure\Security\LexikJwtToken:
+        arguments:
+            $jwtTokenTtl: '%jwt_token_ttl%'
+
+    App\Domain\Security\ApiKeyAuthenticationServiceInterface:
+        alias: App\Infrastructure\Security\ApiKeyAuthenticationService
+
+    # Log
+    App\Infrastructure\Log\MonologLogger:
+        arguments:
+            $logPath: "%kernel.logs_dir%"
+
+    App\Infrastructure\Log\MultiLogger:
+        factory: '@App\Infrastructure\Log\MultiLoggerFactory'
+        arguments:
+            $monolog: '@App\Infrastructure\Log\MonologLogger'
+            # Deferred on purpose: building RollbarLogger initializes the Rollbar library, which
+            # throws on an invalid token. The closure is only called when ROLLBAR_LOGGER_ENABLED is true.
+            $rollbar: !service_closure '@App\Infrastructure\Log\RollbarLogger'
+            $includeRollbar: '%env(bool:ROLLBAR_LOGGER_ENABLED)%'
+
+    App\Application\Log\Logger:
+        alias: 'App\Infrastructure\Log\MultiLogger'
+
+    #############################
+    ### OTP Delivery channels ###
+    #############################
+    App\Infrastructure\OTP\DeliveryChannel\:
+        resource: '../src/Infrastructure/OTP/DeliveryChannel/'
+        tags: [ 'app.otp.delivery_channel' ]
+
+    App\Domain\OTP\DeliveryChannel\DeliveryChannelDispatcher:
+        arguments:
+            $deliveryChannels: !tagged_iterator app.otp.delivery_channel
+
+    #####################
+    ### OTP Providers ###
+    #####################
+    App\Infrastructure\OTP\Provider\DatabaseOtpProvider:
+        arguments:
+            $secret: '%env(string:APP_SECRET)%'
+
+    #############################
+    ### AI Tool translators   ###
+    #############################
+    App\Infrastructure\AI\Toolbox\Translator\:
+        resource: '../src/Infrastructure/AI/Toolbox/Translator/'
+        tags: [ 'app.ai.tool_exception_translator' ]
+
+    App\Infrastructure\AI\Toolbox\ToolExceptionMapper:
+        arguments:
+            $translators: !tagged_iterator app.ai.tool_exception_translator
+
+    ###################
+    ### FileSystems ###
+    ###################
+    PublicLocalFileSystem:
+        class: League\Flysystem\Filesystem
+        factory: '@App\Infrastructure\Shared\FileSystem\Factory\LocalFileSystemFactory'
+        arguments:
+            $location: '%app.filesystem.public_local%'
+
+    PrivateLocalFileSystem:
+        class: League\Flysystem\Filesystem
+        factory: '@App\Infrastructure\Shared\FileSystem\Factory\LocalFileSystemFactory'
+        arguments:
+            $location: '%app.filesystem.private_local%'
+
+    ChunksLocalFileSystem:
+        class: League\Flysystem\Filesystem
+        factory: '@App\Infrastructure\Shared\FileSystem\Factory\LocalFileSystemFactory'
+        arguments:
+            $location: '%app.filesystem.chunks_local%'
+
+    TmpLocalFileSystem:
+        class: League\Flysystem\Filesystem
+        factory: '@App\Infrastructure\Shared\FileSystem\Factory\LocalFileSystemFactory'
+        arguments:
+            $location: '%app.filesystem.tmp_local%'
+
+    App\Infrastructure\Shared\FileSystem\FileSystemImplementation:
+        arguments:
+            $fileSystems:
+                PUBLIC_LOCAL: '@PublicLocalFileSystem'
+                PRIVATE_LOCAL: '@PrivateLocalFileSystem'
+                CHUNKS_LOCAL: '@ChunksLocalFileSystem'
+                TMP_LOCAL: '@TmpLocalFileSystem'
+    App\Infrastructure\Shared\FileSystem\ChunkUploadImplementation:
+        arguments:
+            $fileSystemInterface: '@App\Infrastructure\Shared\FileSystem\FileSystemImplementation'
+            $chunkFileSystem: '@ChunksLocalFileSystem'

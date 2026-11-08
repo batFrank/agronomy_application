@@ -1,0 +1,36 @@
+parameters:
+    # El modelo se pasa como parámetro para que la compilación del contenedor no aborte
+    # cuando un entorno sustituye el agente por un doble de pruebas.
+    app.ai.openrouter_model: '%env(OPENROUTER_MODEL)%'
+
+ai:
+    platform:
+        openrouter:
+            api_key: '%env(OPENROUTER_API_KEY)%'
+
+    agent:
+        # Template of a read-only agent: copy it, rename it and list your own tools.
+        user_directory:
+            model: '%app.ai.openrouter_model%'
+            prompt:
+                file: '%kernel.project_dir%/src/Infrastructure/AI/Agent/UserDirectory/prompt.md'
+            # An explicit list on purpose: `tools: true` would expose every service tagged
+            # `ai.tool`, which in a fork is unpredictable. Declaring the tools is also what creates
+            # `ai.toolbox.user_directory`, so StripIdentifiersFromToolboxesPass decorates it.
+            tools:
+                - App\Infrastructure\AI\Agent\UserDirectory\ListUsersTool
+            # Rounds of tool calls per agent call. Listing users needs one, or a few to walk the pages,
+            # so five is plenty; the bundle default (50) lets a model that loops spend a lot before
+            # stopping. Past the limit the agent loop throws MaxIterationsExceededException, which the
+            # gateway reports as AgentUnavailableException like any other failure of the agent. Adjust
+            # it to the tools of your agent.
+            max_tool_calls: 5
+
+        # Template of the generation form: no tools, and the caller asks for a structured output (a DTO)
+        # with the `response_format` option instead of free text. Having no `tools` means no toolbox is
+        # created for it, so StripIdentifiersFromToolboxesPass has nothing to decorate. The model has to
+        # support structured output (OUTPUT_STRUCTURED).
+        example_report:
+            model: '%app.ai.openrouter_model%'
+            prompt:
+                file: '%kernel.project_dir%/src/Infrastructure/AI/Agent/Report/prompt.md'

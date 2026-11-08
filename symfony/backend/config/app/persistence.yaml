@@ -1,0 +1,65 @@
+parameters:
+    user_table_name: '"user"'
+    api_key_table_name: 'api_key'
+    refresh_token_table_name: 'refresh_token'
+    scheduled_task_table_name: 'scheduled_task'
+    translation_table_name: 'translation'
+    otp_table_name: 'otp'
+
+services:
+    _defaults:
+        autowire: true
+
+    # Transaction Manager
+    App\Application\Persistence\TransactionManager:
+        alias: App\Infrastructure\Persistence\DBALTransactionManager
+
+    App\Infrastructure\Persistence\DBALTransactionManager: ~
+
+    # User Repository
+    App\Domain\User\UserRepository:
+        alias: App\Infrastructure\Persistence\User\DBALUserRepository
+
+    App\Infrastructure\Persistence\User\DBALUserRepository:
+        arguments:
+            $userTableName: '%user_table_name%'
+
+    # ApiKey Repository
+    App\Domain\ApiKey\ApiKeyRepository:
+        alias: App\Infrastructure\Persistence\ApiKey\DBALApiKeyRepository
+
+    App\Infrastructure\Persistence\ApiKey\DBALApiKeyRepository:
+        arguments:
+            $apiKeyTableName: '%api_key_table_name%'
+
+    # RefreshToken Repository
+    App\Domain\Security\RefreshTokenRepository:
+        alias: App\Infrastructure\Persistence\Security\DBALRefreshTokenRepository
+
+    App\Infrastructure\Persistence\Security\DBALRefreshTokenRepository:
+        arguments:
+            $refreshTokenTableName: '%refresh_token_table_name%'
+
+    # ScheduledTask Repository
+    App\Domain\Scheduler\ScheduledTaskRepository:
+        alias: App\Infrastructure\Persistence\Scheduler\DBALScheduledTaskRepository
+
+    App\Infrastructure\Persistence\Scheduler\DBALScheduledTaskRepository:
+        arguments:
+            $scheduledTaskTableName: '%scheduled_task_table_name%'
+
+    # Translation Repository
+    App\Domain\Translation\TranslationRepository:
+        alias: App\Infrastructure\Persistence\Translation\DBALTranslationRepository
+
+    App\Infrastructure\Persistence\Translation\DBALTranslationRepository:
+        arguments:
+            $translationTableName: '%translation_table_name%'
+
+    # OTP Repository
+    App\Domain\OTP\OtpRepository:
+        alias: App\Infrastructure\Persistence\OTP\DBALOtpRepository
+
+    App\Infrastructure\Persistence\OTP\DBALOtpRepository:
+        arguments:
+            $otpTableName: '%otp_table_name%'

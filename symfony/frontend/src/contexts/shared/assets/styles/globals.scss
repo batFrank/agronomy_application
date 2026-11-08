@@ -1,0 +1,182 @@
+@use 'sass:color';
+@use '@/contexts/shared/assets/styles/fonts' as fonts;
+// colors
+$color-primary: #2196f3 !default;
+$color-success: #4caf50 !default;
+$color-warning: #ffc107 !default;
+$color-danger: #f44336 !default;
+
+// neutral colors
+$color-neutral-darkest: #0b0d0e;
+$color-neutral-darker: #32383e;
+$color-neutral-dark: #484f56;
+$color-neutral-mid-dark: #878f97;
+$color-neutral-mid: #ced4da;
+$color-neutral-mid-light: #dfe3e7;
+$color-neutral-light: #e8ebee;
+$color-neutral-lighter: #f0f2f4;
+$color-neutral-lightest: #ffffff;
+
+// General text
+$text-color: $color-neutral-darker !default;
+$link-color: $color-primary !default;
+$bg-color: $color-neutral-lightest !default;
+$font-primary: fonts.$family-primary !default;
+$font-secondary: fonts.$family-secondary !default;
+$font-line-height: 1.5 !default;
+
+// Input custom
+$input-text-color: $text-color !default;
+$input-border-color: $color-neutral-mid !default;
+$input-background: $color-neutral-lightest !default;
+$input-primary: $color-primary !default;
+$input-primary-bg: color.adjust($input-primary, $lightness: 40%) !default;
+$input-background-disabled: $color-neutral-mid-light !default;
+$input-text-disabled: $color-neutral-dark !default;
+$icon-color: $text-color !default;
+$error-color: $color-danger !default;
+
+// Header and footer
+$header-bg-color: $color-neutral-lightest !default;
+$header-hover-bg-color: $input-primary-bg !default;
+$header-hover-line-color: $color-primary !default;
+$header-text-color: $color-neutral-darkest !default;
+$header-height: 4rem !default;
+$header-shadow: 0 0 2px 1px $color-neutral-mid-dark !default;
+$header-border-color: $color-neutral-mid !default;
+
+$footer-bg-color: $color-neutral-lightest !default;
+$footer-text-color: $color-neutral-darkest !default;
+$footer-link-color: $color-primary !default;
+
+:root {
+  font-family: $font-primary;
+  line-height: $font-line-height;
+  font-weight: 400;
+
+  color: var(--text-color);
+  background-color: var(--bg-color);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  box-sizing: border-box;
+
+  --color-primary: #{$color-primary};
+  --color-primary-hover: #{color.adjust($color-primary, $lightness: -10%)};
+  --color-success: #{$color-success};
+  --color-success-hover: #{color.adjust($color-success, $lightness: -10%)};
+  --color-warning: #{$color-warning};
+  --color-warning-hover: #{color.adjust($color-warning, $lightness: -10%)};
+  --color-danger: #{$color-danger};
+  --color-danger-hover: #{color.adjust($color-danger, $lightness: -10%)};
+
+  --color-neutral-darkest: #{$color-neutral-darkest};
+  --color-neutral-darker: #{$color-neutral-darker};
+  --color-neutral-dark: #{$color-neutral-dark};
+  --color-neutral-mid-dark: #{$color-neutral-mid-dark};
+  --color-neutral-mid: #{$color-neutral-mid};
+  --color-neutral-mid-light: #{$color-neutral-mid-light};
+  --color-neutral-light: #{$color-neutral-light};
+  --color-neutral-lighter: #{$color-neutral-lighter};
+  --color-neutral-lightest: #{$color-neutral-lightest};
+
+  --text-color: #{$text-color};
+  --link-color: #{$link-color};
+  --bg-color: #{$bg-color};
+  --font-primary: #{$font-primary};
+  --font-secondary: #{$font-secondary};
+
+  --input-text-color: #{$input-text-color};
+  --input-border-color: #{$input-border-color};
+  --icon-color: #{$icon-color};
+  --input-background: #{$input-background};
+  --input-primary: #{$input-primary};
+  --input-primary-bg: #{$input-primary-bg};
+  --input-background-disabled: #{$input-background-disabled};
+  --input-text-disabled: #{$input-text-disabled};
+  --error-color: #{$error-color};
+
+  --header-bg-color: #{$header-bg-color};
+  --header-hover-bg-color: #{$header-hover-bg-color};
+  --header-hover-line-color: #{$header-hover-line-color};
+  --header-text-color: #{$header-text-color};
+  --header-height: #{$header-height};
+  --header-shadow: #{$header-shadow};
+  --header-border-color: #{$header-border-color};
+
+  --footer-bg-color: #{$footer-bg-color};
+  --footer-text-color: #{$footer-text-color};
+  --footer-link-color: #{$footer-link-color};
+}
+
+* {
+  box-sizing: border-box;
+  font-family: #{$font-primary};
+  line-height: #{$font-line-height};
+}
+
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
+html,
+body {
+  width: 100%;
+  position: relative;
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  height: 100dvh;
+  min-width: 340px;
+  overflow-y: auto;
+}
+
+.title,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: $font-secondary;
+  margin: 0;
+}
+
+a,
+a:is(:focus, :active, :visited, :link) {
+  color: var(--link-color);
+  text-decoration: none;
+  outline: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.container {
+  max-width: 1400px;
+  margin: auto;
+}
+
+::-webkit-scrollbar {
+  width: 0.5rem;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: color.adjust($color-primary, $lightness: 20%);
+  border-radius: 7px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: $color-primary;
+}

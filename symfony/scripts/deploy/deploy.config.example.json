@@ -1,0 +1,85 @@
+{
+  "settings": {
+    "bunImage": "oven/bun:latest",
+    "phpContainer": "symfony-base-php"
+  },
+  "backend": {
+    "EMAIL_FROM": "soporte@example.com",
+    "EMAIL_FROM_NAME": "Soporte <proyecto>",
+    "ROLLBAR_LOGGER_ENABLED": "false"
+  },
+  "environments": {
+    "pre": {
+      "url": "https://pre.<proyecto>.example.com",
+      "ssh": {
+        "host": "CAMBIAME_HOST_SSH_PRE",
+        "port": 22,
+        "username": "CAMBIAME_USUARIO_SSH_PRE",
+        "password": "CAMBIAME_PASSWORD_SSH_PRE"
+      },
+      "db": {
+        "host": "CAMBIAME_HOST_BD_PRE",
+        "port": 5432,
+        "database": "symfony_base_pre",
+        "username": "CAMBIAME_USUARIO_BD_PRE",
+        "password": "CAMBIAME_PASSWORD_BD_PRE",
+        "version": "17",
+        "pgDumpBin": "pg_dump"
+      },
+      "paths": {
+        "backend": "/home/CAMBIAME_USUARIO_SSH_PRE",
+        "frontend": "/home/CAMBIAME_USUARIO_SSH_PRE/public/app"
+      },
+      "phpBin": "php8.5",
+      "fpmUser": "CAMBIAME_USUARIO_PHP_FPM_PRE",
+      "backend": {
+        "APP_SECRET": "CAMBIAME_APP_SECRET_PRE",
+        "JWT_PASSPHRASE": "CAMBIAME_JWT_PASSPHRASE_PRE",
+        "MAILER_DSN": "smtp://CAMBIAME_HOST_SMTP:587",
+        "EMAIL_BASE_URL": "https://pre.<proyecto>.example.com/app",
+        "CORS_ALLOW_ORIGIN": "^https://pre\\.<proyecto>\\.example\\.com$",
+        "ROLLBAR_TOKEN": "CAMBIAME_TOKEN_ROLLBAR_32_O_96_CARACTERES"
+      },
+      "frontend": {
+        "VITE_BASE_URL": "/app/",
+        "VITE_API_URL": "/api/v1"
+      }
+    },
+    "pro": {
+      "url": "https://<proyecto>.example.com",
+      "ssh": {
+        "host": "CAMBIAME_HOST_SSH_PRO",
+        "port": 22,
+        "username": "CAMBIAME_USUARIO_SSH_PRO",
+        "password": "CAMBIAME_PASSWORD_SSH_PRO"
+      },
+      "db": {
+        "host": "CAMBIAME_HOST_BD_PRO",
+        "port": 5432,
+        "database": "symfony_base_pro",
+        "username": "CAMBIAME_USUARIO_BD_PRO",
+        "password": "CAMBIAME_PASSWORD_BD_PRO",
+        "version": "17",
+        "pgDumpBin": "pg_dump"
+      },
+      "paths": {
+        "backend": "/home/CAMBIAME_USUARIO_SSH_PRO",
+        "frontend": "/home/CAMBIAME_USUARIO_SSH_PRO/public/app"
+      },
+      "phpBin": "php8.5",
+      "fpmUser": "CAMBIAME_USUARIO_PHP_FPM_PRO",
+      "backend": {
+        "APP_SECRET": "CAMBIAME_APP_SECRET_PRO",
+        "JWT_PASSPHRASE": "CAMBIAME_JWT_PASSPHRASE_PRO",
+        "MAILER_DSN": "smtp://CAMBIAME_HOST_SMTP:587",
+        "EMAIL_BASE_URL": "https://<proyecto>.example.com/app",
+        "CORS_ALLOW_ORIGIN": "^https://<proyecto>\\.example\\.com$",
+        "ROLLBAR_TOKEN": "CAMBIAME_TOKEN_ROLLBAR_32_O_96_CARACTERES"
+      },
+      "frontend": {
+        "VITE_BASE_URL": "/app/",
+        "VITE_API_URL": "/api/v1"
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+parameters:
+    app.security_config:
+        prefix: '/api/v1'
+
+        # Only the first will be matched, if not found, required full authentication
+        # Note: This is now handled by Symfony's native security system
+        # but kept for backward compatibility with custom firewall logic
+        access_control:
+            - { path: ^/health-check, roles: PUBLIC_ACCESS }
+            - { path: ^/auth/login, roles: PUBLIC_ACCESS }
+            - { path: ^/auth/logout, roles: PUBLIC_ACCESS }
+            - { path: ^/auth/refresh, roles: PUBLIC_ACCESS }
+            - { path: ^/auth/password-recover, roles: PUBLIC_ACCESS }
+            - { path: ^/auth/password-check, roles: PUBLIC_ACCESS }
+            - { path: ^/auth/password-reset, roles: PUBLIC_ACCESS }
+            - { path: ^/admin/users, roles: [ROLE_ADMIN, ROLE_MANAGER], methods: [GET] }
+            - { path: ^/admin, roles: [ROLE_ADMIN] }
+            - { path: ^/auth/otp/login-2fa/generate, roles: [ X_API_KEY ], methods: [POST] }
+            - { path: ^/auth/otp/login-2fa/validate, roles: [ X_API_KEY ], methods: [POST] }
+            - { path: ^/, roles: IS_AUTHENTICATED_FULLY }

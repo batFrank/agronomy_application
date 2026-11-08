@@ -1,0 +1,22 @@
+#
+# Users
+#
+users:
+    path: /users
+    methods: GET
+    controller: App\Infrastructure\Controller\Admin\User\GetUsersController
+
+user:
+    path: /users/{id}
+    methods: GET
+    controller: App\Infrastructure\Controller\Admin\User\GetUserController
+
+create_user:
+    path: /users
+    methods: POST
+    controller: App\Infrastructure\Controller\Admin\User\CreateUserController
+
+update_user:
+    path: /users/{id}
+    methods: PATCH
+    controller: App\Infrastructure\Controller\Admin\User\UpdateUserController

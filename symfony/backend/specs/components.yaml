@@ -1,0 +1,132 @@
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Mensaje descriptivo del error
+        error:
+          type: integer
+          description: Código de error (1 para errores generales)
+        metadata:
+          type: object
+          description: Información adicional sobre el error
+          properties:
+            violations:
+              type: object
+              description: Errores de validación específicos por campo
+              additionalProperties:
+                type: string
+
+    User:
+      type: object
+      description: Representación de un usuario del sistema
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único del usuario
+        email:
+          type: string
+          format: email
+          description: Email del usuario (único en el sistema)
+        roles:
+          type: array
+          description: Roles asignados al usuario
+          items:
+            type: string
+            enum: [ROLE_ADMIN, ROLE_USER]
+        created_at:
+          type: string
+          format: date-time
+          description: Fecha y hora de creación del usuario
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Fecha y hora de última actualización del usuario (null si nunca se actualizó)
+        created_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: UUID del usuario administrador que creó este usuario (null para usuarios auto-registrados)
+        creator:
+          type: object
+          nullable: true
+          description: Datos básicos del usuario que creó este usuario cuando la relación viene hidratada
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: Identificador único del usuario creador
+            email:
+              type: string
+              format: email
+              description: Email del usuario creador
+          example:
+            id: 123e4567-e89b-12d3-a456-426614174000
+            email: creator@example.com
+
+  responses:
+    BadRequest:
+      description: |
+        Petición incorrecta - error de validación o parámetros inválidos.
+        La respuesta incluye violations en metadata con errores específicos por campo.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: No autorizado - token JWT ausente, inválido o expirado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Forbidden:
+      description: Acceso prohibido - el usuario no tiene permisos suficientes
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    UnprocessableEntity:
+      description: |
+        Entidad no procesable - error en la lógica de negocio
+        (ej. email duplicado, violación de reglas de dominio)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    BadGateway:
+      description: |
+        Fallo del proveedor de IA (transporte, iteraciones agotadas o respuesta no utilizable).
+        El mensaje es genérico a propósito: no expone la causa real.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    InternalServerError:
+      description: Error interno del servidor - error inesperado en el procesamiento
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT obtenido mediante el endpoint de login

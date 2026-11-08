@@ -1,0 +1,9 @@
+generate_otp_2fa_login:
+    path: /otp/login-2fa/generate
+    methods: POST
+    controller: App\Infrastructure\Controller\Auth\Otp\GenerateLogin2FAOtpController
+
+validate_otp_2fa_login:
+    path: /otp/login-2fa/validate
+    methods: POST
+    controller: App\Infrastructure\Controller\Auth\Otp\ValidateLogin2FAOtpController

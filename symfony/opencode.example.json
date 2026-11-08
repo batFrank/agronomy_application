@@ -1,0 +1,70 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "anthropic/claude-sonnet-4-5",
+  "small_model": "anthropic/claude-haiku-4-5",
+  "theme": "opencode",
+  "autoupdate": true,
+  "instructions": ["./AGENTS.md", "./docs/code/CONVENTIONS.md", "./docs/agents/reviewer.md"],
+  "tools": {
+    "write": true,
+    "edit": true,
+    "bash": true
+  },
+  "agent": {
+    "code-reviewer": {
+      "description": "Reviews code against project conventions, architecture, and quality standards. Provides comprehensive analysis of architecture compliance, naming conventions, code quality, test coverage, security, and performance.",
+      "mode": "primary",
+      "prompt": "{file:./.opencode/prompts/code-reviewer.md}",
+      "tools": {
+        "bash": true,
+        "read": true,
+        "grep": true,
+        "glob": true,
+        "write": false,
+        "edit": false
+      }
+    },
+    "pair-programmer": {
+      "description": "Master coordinator orchestrating Driver and Navigator agents to collaboratively resolve issues with guaranteed quality",
+      "mode": "primary",
+      "prompt": "{file:./.opencode/prompts/pair-programmer.md}",
+      "model": "github-copilot/claude-opus-4.5",
+      "tools": {
+        "bash": true,
+        "read": true,
+        "write": true,
+        "edit": true,
+        "grep": true,
+        "glob": true,
+        "task": true
+      }
+    },
+    "navigator": {
+      "description": "Analyzes issues deeply, investigates architecture, proposes implementation plans, and supervises standards compliance",
+      "mode": "subagent",
+      "prompt": "{file:./.opencode/prompts/navigator.md}",
+      "model": "github-copilot/claude-opus-4.5",
+      "tools": {
+        "bash": true,
+        "read": true,
+        "grep": true,
+        "glob": true,
+        "write": false,
+        "edit": false
+      }
+    },
+    "driver": {
+      "description": "Implements code under Navigator supervision, creating files and writing logic according to established plan",
+      "mode": "subagent",
+      "prompt": "{file:./.opencode/prompts/driver.md}",
+      "model": "github-copilot/claude-haiku-4.5",
+      "tools": {
+        "bash": true,
+        "read": true,
+        "write": true,
+        "edit": true,
+        "glob": true
+      }
+    }
+  }
+}

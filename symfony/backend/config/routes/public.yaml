@@ -1,0 +1,65 @@
+#
+# Options fallback
+#
+options_fallback:
+    path: /{any}
+    methods: OPTIONS
+    controller: App\Infrastructure\Controller\OptionsController
+    requirements:
+        any: ".*"
+
+#
+# Health check
+#
+health_check:
+    path: /health-check
+    methods: GET
+    controller: App\Infrastructure\Controller\HealthCheckController
+
+#
+# Authentication
+#
+auth_login:
+    path: /auth/login
+    methods: POST
+
+auth_refresh:
+    path: /auth/refresh
+    methods: POST
+    controller: App\Infrastructure\Controller\Auth\RefreshTokenController
+
+auth_logout:
+    path: /auth/logout
+    methods: POST
+    controller: App\Infrastructure\Controller\Auth\LogoutController
+
+password_recover:
+    path: /auth/password-recover
+    methods: POST
+    controller: App\Infrastructure\Controller\Auth\PostUserPasswordRecoverController
+
+password_check:
+    path: /auth/password-check
+    methods: POST
+    controller: App\Infrastructure\Controller\Auth\PostUserPasswordCheckController
+
+password_reset:
+    path: /auth/password-reset
+    methods: POST
+    controller: App\Infrastructure\Controller\Auth\PostUserPasswordResetController
+
+#
+# User profile
+#
+me:
+    path: /me
+    methods: GET
+    controller: App\Infrastructure\Controller\User\GetMeController
+
+#
+# AI chat
+#
+ai_chat:
+    path: /ai/chat
+    methods: POST
+    controller: App\Infrastructure\Controller\AI\PostAiChatController

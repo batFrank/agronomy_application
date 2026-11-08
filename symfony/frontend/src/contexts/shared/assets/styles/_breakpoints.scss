@@ -1,0 +1,11 @@
+$xs-min: 480;
+$sm-min: 576;
+$md-min: 768;
+$lg-min: 992;
+$xl-min: 1300;
+
+$breakpoint-xs: 'screen and (max-width: ' + $xs-min + 'px)';
+$breakpoint-sm: 'screen and (max-width: ' + $sm-min + 'px)';
+$breakpoint-md: 'screen and (max-width: ' + $md-min + 'px)';
+$breakpoint-lg: 'screen and (max-width: ' + $lg-min + 'px)';
+$breakpoint-xl: 'screen and (max-width: ' + $xl-min + 'px)';

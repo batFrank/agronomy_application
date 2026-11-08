@@ -1,0 +1,5 @@
+parameters:
+    app.email_from: '%env(EMAIL_FROM)%'
+    app.email_from_name: '%env(EMAIL_FROM_NAME)%'
+    app.email_base_url: '%env(EMAIL_BASE_URL)%'
+    app.reset_password_url: '%env(EMAIL_BASE_URL)%/reset-password/{token}'
